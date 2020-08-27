@@ -1,0 +1,107 @@
+#
+# https://hub.docker.com/r/rclone/rclone
+#
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: rclone
+message: rclone template
+metadata:
+  annotations:
+    description: Deploys a rclone Cronjob to synchronize a PVC into a S3 bucket/folder
+    iconClass: "fa fa-cubes"
+    openshift.io/display-name: rclone
+    openshift.io/provider-display-name: CSC
+  name: rclone
+objects:
+- apiVersion: batch/v1beta1
+  kind: CronJob
+  metadata:
+    labels:
+      app: rclone
+    name: rclone
+  spec:
+    schedule: ${SCHEDULE}
+    jobTemplate:
+      spec:
+        template:
+          metadata:
+            labels:
+              parent: "rclone"
+          spec:
+            containers:
+            - name: rclone
+              image: rclone/rclone:1
+              command: ["rclone", "sync", "-P", "/mnt", "default:${BUCKET_DIR}"]
+              volumeMounts:
+              - mountPath: /.rclone.conf
+                name: rclone-conf
+                subPath: rclone.conf
+              - mountPath: /mnt
+                name: pvc
+            restartPolicy: OnFailure
+            volumes:
+            - name: rclone-conf
+              secret:
+                secretName: rclone-conf
+                defaultMode: 420
+                items:
+                  - key: rclone.conf
+                    path: rclone.conf
+            - name: pvc
+              persistentVolumeClaim:
+                claimName: ${PVC}
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: rclone-conf
+    labels:
+      app: rclone
+  type: Opaque
+  stringData:
+    "rclone.conf": |-
+      [default]
+      type = s3
+      provider = Other
+      env_auth = false
+      access_key_id = ${ACCESS_KEY}
+      secret_access_key = ${SECRET_KEY}
+      endpoint = ${S3HOST}
+      location_constraint = regionOne
+
+parameters:
+  - name: ACCESS_KEY
+    required: true
+    description: Access key
+    displayName: Access key
+    from: '[a-zA-Z0-9]{32}'
+
+  - name: SECRET_KEY
+    description: "Secret key"
+    displayName: Secret key
+    required: true
+    from: '[a-zA-Z0-9]{32}'
+
+  - name: PVC
+    description: "Name on the persistent volume claim to synchronize from"
+    displayName: PersistentVolumeClaim
+    required: true
+
+  - name: BUCKET_DIR
+    description: "Bucket and directory to synchronize to. The format should be <bucket>/path/path2"
+    displayName: Bucket and directory
+    required: true
+
+  - name: S3HOST
+    description: "Host name for the S3 server"
+    displayName: Host name
+    required: true
+    value: "object.pouta.csc.fi"
+
+  - name: SCHEDULE
+    description: >
+      When to run the cronjob, see https://en.wikipedia.org/wiki/Cron for reference
+    displayName: Schedule
+    required: true
+    value: "30 * * * *"
+
