@@ -8,7 +8,7 @@ labels:
 message: rclone template
 metadata:
   annotations:
-    description: Deploys a rclone Cronjob to synchronize a PVC into a S3 bucket/folder
+    description: Deploys a rclone Cronjob to backup a Postgres DB into a S3 bucket/folder. The job expects a secret called 'postgresql' with the following entries: 'database-name', 'database-user', and 'database-password', as the secret that the PostgreSQL template creates.
     iconClass: "fa fa-cubes"
     openshift.io/display-name: rclone
     openshift.io/provider-display-name: CSC
@@ -31,14 +31,32 @@ objects:
           spec:
             containers:
             - name: rclone
-              image: rclone/rclone:1
-              command: ["rclone", "sync", "-P", "/mnt", "default:${BUCKET_DIR}"]
+              image: lvarin/rclone-psql:latest
+              command: ["/usr/local/bin/backup.sh"]
+              env:
+              - name: DBNAME
+                valueFrom:
+                  secretKeyRef:
+                    key: database-name
+                    name: postgresql
+              - name: DBHOST
+                value: ${POSTGRESHOST}
+              - name: DBUSER
+                valueFrom:
+                  secretKeyRef:
+                    key: database-user
+                    name: postgresql
+              - name: BUCKET_DIR
+                value: ${BUCKET_DIR}
+              - name: PGPASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: database-password
+                    name: postgresql
               volumeMounts:
               - mountPath: /.rclone.conf
                 name: rclone-conf
                 subPath: rclone.conf
-              - mountPath: /mnt
-                name: pvc
             restartPolicy: OnFailure
             volumes:
             - name: rclone-conf
@@ -48,9 +66,6 @@ objects:
                 items:
                   - key: rclone.conf
                     path: rclone.conf
-            - name: pvc
-              persistentVolumeClaim:
-                claimName: ${PVC}
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -67,7 +82,6 @@ objects:
       access_key_id = ${ACCESS_KEY}
       secret_access_key = ${SECRET_KEY}
       endpoint = ${S3HOST}
-      location_constraint = regionOne
 
 parameters:
   - name: ACCESS_KEY
@@ -82,11 +96,6 @@ parameters:
     required: true
     from: '[a-zA-Z0-9]{32}'
 
-  - name: PVC
-    description: "Name on the persistent volume claim to synchronize from"
-    displayName: PersistentVolumeClaim
-    required: true
-
   - name: BUCKET_DIR
     description: "Bucket and directory to synchronize to. The format should be <bucket>/path/path2"
     displayName: Bucket and directory
@@ -96,11 +105,17 @@ parameters:
     description: "Host name for the S3 server"
     displayName: Host name
     required: true
-    value: "object.pouta.csc.fi"
+    value: "a3s.fi"
+
+  - name: POSTGRESHOST
+    description: "Postgres hostname where the DB runs"
+    displayName: PostgreSQL hostname
+    required: true
+    value: "postgresql"
 
   - name: SCHEDULE
     description: >
-      When to run the cronjob, see https://en.wikipedia.org/wiki/Cron for reference
+      When to run the cronjob, see https://en.wikipedia.org/wiki/Cron for reference. The example below runs every hour at half past
     displayName: Schedule
     required: true
     value: "30 * * * *"
