@@ -15,7 +15,6 @@ Then use the template from the web interface, or from the command line:
 $ oc process rclone \
     ACCESS_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX \
     SECRET_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX \
-    PVC=existing_pvc \
     BUCKET_DIR=existing_bucket/existing/path
 ```
 
