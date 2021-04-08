@@ -8,7 +8,7 @@ labels:
 message: rclone template
 metadata:
   annotations:
-    description: Deploys a rclone Cronjob to backup a Postgres DB into a S3 bucket/folder. The job expects a secret called 'postgresql' with the following entries: 'database-name', 'database-user', and 'database-password', as the secret that the PostgreSQL template creates.
+    description: "Deploys a rclone Cronjob to backup a Postgres DB into a S3 bucket/folder. The job expects a secret called 'postgresql' with the following entries: 'database-name', 'database-user', and 'database-password', as the secret that the PostgreSQL template creates."
     iconClass: "fa fa-cubes"
     openshift.io/display-name: rclone
     openshift.io/provider-display-name: CSC
