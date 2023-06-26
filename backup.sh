@@ -95,7 +95,7 @@ if [ "$TYPELOWER" == "postgres" ]; then
     exit 0
 fi
 
-if [ "${TYPELOWER}" == "mariadb" ]; then
+if [ "$TYPELOWER" == "mariadb" ]; then
     BACKUPFILE="/tmp/${DBHOST}-${DBNAME}-$(date +%Y%m%d-%H%M).SQL"
     export BACKUPFILE
     
