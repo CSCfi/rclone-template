@@ -31,7 +31,7 @@ do case $1 in
     -B | -b | --bucket) BUCKET_DIR="$2"
         shift 2
         ;;
-    -P | -p | --password) PGPASSWORD="$2"
+    -P | -p | --password) DBPASSWORD="$2"
         shift 2
         ;;
     --help)
@@ -69,7 +69,7 @@ if [ -z "$DBUSER" ]; then
   exit 1
 fi
 
-if [ -z "$PGPASSWORD" ]; then
+if [ -z "$DBPASSWORD" ]; then
   echo "ERROR: PGPASSWORD env variable is not defined"
   echo "Type --help to display help message"
   exit 1
@@ -99,9 +99,17 @@ if [ "$TYPELOWER" == "mariadb" ]; then
     BACKUPFILE="/tmp/${DBHOST}-${DBNAME}-$(date +%Y%m%d-%H%M).SQL"
     export BACKUPFILE
     
-    mysqldump -u "${DBUSER}" -p "${DBNAME}" > "${BACKUPFILE}"
-    rclone copy "${BACKUPFILE}" "default:${BUCKET_DIR}"
-    echo "File ${BACKUPFILE} copied to default:${BUCKET_DIR}"
+    mariadb-dump -u "${DBUSER}" -p"${DBPASSWORD}" $"${DBNAME}" > "${BACKUPFILE}"
+    if [ "$?" == "0" ]
+    then
+      rclone copy "${BACKUPFILE}" "default:${BUCKET_DIR}"
+      echo "File ${BACKUPFILE} copied to default:${BUCKET_DIR}"
+    else
+      echo "Failed with mariadb-dump, let's try with mysqldump"
+      mysqldump -u "${DBUSER}" -p"${DBPASSWORD}" "${DBNAME}" > "${BACKUPFILE}"
+      rclone copy "${BACKUPFILE}" "default:${BUCKET_DIR}"
+      echo "File ${BACKUPFILE} copied to default:${BUCKET_DIR}"
+    fi
     
     exit 0
 fi
