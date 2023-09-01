@@ -5,11 +5,10 @@ Help()
 {
     echo "Backup database"
     echo
-    echo "Usage: `basename ${0}` [ -T | --type ] [ -D | --database ] [ -H | --host ] [ -U | -user ] [ -P | --password ] [ -B | --bucket ]"
+    echo "Usage: `basename ${0}` [ -D | --database ] [ -H | --host ] [ -U | -user ] [ -P | --password ] [ -B | --bucket ]"
     echo "options:"
-    echo "-T | -t | --type       Database type. Can be postgres, mariadb."
     echo "-D | -d | ---database   Name of your database."
-    echo "-H | -h | ---host       Name of the host where the database is located."
+    echo "-H | -h | ---host       Name of the host where the database is located. Must be either 'postgresql' or 'mariadb'"
     echo "-U | -u | ---user       Name of the database user with enough access to dump the database."
     echo "-P | -p | ---password   Password of the user with enough access to dump the database."
     echo "-B | -b | ---bucket     Name of the S3 bucket where you want to dump your database."
@@ -45,20 +44,14 @@ do case $1 in
 esac done
 
 # Check if all args are here
-if [ -z "$TYPE" ]; then
-    echo "ERROR: TYPE env variable is not defined"
-    echo "Type --help to display help message"
-    exit 1
-fi
-
 if [ -z "$DBNAME" ]; then
   echo "ERROR: DBNAME env variable is not defined"
   echo "Type --help to display help message"
   exit 1
 fi
 
-if [ -z "$DBHOST" ]; then
-  echo "ERROR: DBHOST env variable is not defined"
+if [ "$DBHOST" != postgresql ] && [ "$DBHOST" != POSTGRESQL ] && [ "$DBHOST" != mariadb ] && [ "$DBHOST" != MARIADB ]; then
+  echo "ERROR: DBHOST env variable must be either 'postgresql' or 'mariadb'"
   echo "Type --help to display help message"
   exit 1
 fi
@@ -82,9 +75,9 @@ if [ -z "$BUCKET_DIR" ]; then
 fi
 
 # If using uppercase letters, reassign into TYPELOWER with only lowercase. Then, check if it's postgres, mariadb
-TYPELOWER=$(echo "$TYPE" | tr '[:upper:]' '[:lower:]')
+TYPELOWER=$(echo "$DBHOST" | tr '[:upper:]' '[:lower:]')
 
-if [ "$TYPELOWER" == "postgres" ]; then
+if [ "$TYPELOWER" == "postgresql" ]; then
     BACKUPFILE="/tmp/${DBHOST}-${DBNAME}-$(date +%Y%m%d-%H%M).SQL"
     export BACKUPFILE
 
@@ -110,6 +103,5 @@ if [ "$TYPELOWER" == "mariadb" ]; then
       rclone copy "${BACKUPFILE}" "default:${BUCKET_DIR}"
       echo "File ${BACKUPFILE} copied to default:${BUCKET_DIR}"
     fi
-    
     exit 0
 fi
