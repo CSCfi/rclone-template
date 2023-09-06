@@ -31,7 +31,7 @@ objects:
           spec:
             containers:
             - name: rclone
-              image: lvarin/rclone-psql:latest
+              image: cscfi/rclone-psql:latest
               command: ["/usr/local/bin/backup.sh"]
               env:
               - name: DBNAME
