@@ -30,7 +30,7 @@ do case $1 in
     -B | -b | --bucket) BUCKET_DIR="$2"
         shift 2
         ;;
-    -P | -p | --password) DBPASSWORD="$2"
+    -P | -p | --password) PGPASSWORD="$2"
         shift 2
         ;;
     --help)
