@@ -31,28 +31,28 @@ objects:
           spec:
             containers:
             - name: rclone
-              image: lvarin/rclone-psql:latest
+              image: cscfi/rclone-psql:latest
               command: ["/usr/local/bin/backup.sh"]
               env:
               - name: DBNAME
                 valueFrom:
                   secretKeyRef:
                     key: database-name
-                    name: postgresql
+                    name: ${DBHOST}
               - name: DBHOST
-                value: ${POSTGRESHOST}
+                value: ${DBHOST}
               - name: DBUSER
                 valueFrom:
                   secretKeyRef:
                     key: database-user
-                    name: postgresql
+                    name: ${DBHOST}
               - name: BUCKET_DIR
                 value: ${BUCKET_DIR}
               - name: PGPASSWORD
                 valueFrom:
                   secretKeyRef:
                     key: database-password
-                    name: postgresql
+                    name: ${DBHOST}
               volumeMounts:
               - mountPath: /.rclone.conf
                 name: rclone-conf
@@ -107,11 +107,10 @@ parameters:
     required: true
     value: "a3s.fi"
 
-  - name: POSTGRESHOST
-    description: "Postgres hostname where the DB runs"
-    displayName: PostgreSQL hostname
+  - name: DBHOST
+    description: "Database hostname where the DB runs. Must be either 'postgresql' or 'mariadb'"
+    displayName: Database hostname
     required: true
-    value: "postgresql"
 
   - name: SCHEDULE
     description: >
@@ -119,4 +118,3 @@ parameters:
     displayName: Schedule
     required: true
     value: "30 * * * *"
-
