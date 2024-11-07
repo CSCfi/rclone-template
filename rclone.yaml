@@ -14,7 +14,7 @@ metadata:
     openshift.io/provider-display-name: CSC
   name: rclone
 objects:
-- apiVersion: batch/v1beta1
+- apiVersion: batch/v1
   kind: CronJob
   metadata:
     labels:
